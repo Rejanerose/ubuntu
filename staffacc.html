@@ -1,0 +1,220 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Westeria Staff Accounts</title>
+    <link rel="stylesheet" href="staffdash.css">
+    <style>
+        .staff-form { background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 24px; }
+        .staff-form h2 { margin-top: 0; }
+        .staff-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+        .staff-form input { width: 100%; box-sizing: border-box; padding: 11px; border: 1px solid #ccc; border-radius: 6px; }
+        .staff-form button { margin-top: 15px; padding: 11px 20px; cursor: pointer; }
+        .staff-message { margin: 12px 0; }
+        .staff-form button:disabled, .member-action:disabled { opacity: 0.6; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo">
+            <img src="Westeria Logo with Fierce Wolf Emblem.png" alt="Westeria Logo">
+        </div>
+        <nav>
+            <ul class="nav-links">
+                <li><a href="admindash.html">Members</a></li>
+                <li><a href="staffacc.html">Staff Accounts</a></li>
+                <li class="logout"><a href="index.html">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main class="dashboard">
+        <section class="hero">
+            <h1>Welcome, Elder!</h1>
+        </section>
+        <section class="products">
+            <div class="staff-form">
+                <h2>Add Staff Account</h2>
+                <form id="staffForm">
+                    <div class="staff-form-grid">
+                        <input type="text" name="fname" placeholder="First name" maxlength="100" required>
+                        <input type="text" name="lname" placeholder="Last name" maxlength="100" required>
+                        <input type="text" name="username" placeholder="Username" maxlength="100" required>
+                        <input type="tel" name="phone" placeholder="Phone number" maxlength="30" required>
+                        <input type="date" name="dob" aria-label="Date of birth" required>
+                        <input type="email" name="email" placeholder="Email address" maxlength="255" required>
+                        <input type="password" name="password" placeholder="Password (minimum 8 characters)" minlength="8" autocomplete="new-password" required>
+                    </div>
+                    <button type="submit" id="addStaffButton">Add Staff</button>
+                    <p id="formNotice" class="staff-message" role="status"></p>
+                </form>
+            </div>
+            <div class="members-heading">
+                <h2>Staff Accounts</h2>
+            </div>
+            <div id="notice" class="notice" role="status"></div>
+            <div id="staffList" class="members-list">
+                <div class="members-message">Loading staff accounts...</div>
+            </div>
+        </section>
+    </main>
+    <footer class="footer">
+        <p>&copy; 2026 Westeria Inventory System</p>
+    </footer>
+    <script>
+        "use strict";
+        const staffList = document.getElementById("staffList");
+        const notice = document.getElementById("notice");
+        const staffForm = document.getElementById("staffForm");
+        const formNotice = document.getElementById("formNotice");
+        const addButton = document.getElementById("addStaffButton");
+        let isLoading = false;
+        let refreshTimer;
+        let noticeTimer;
+        async function apiRequest(options = {}) {
+            const response = await fetch("process_staff.php", {
+                ...options,
+                credentials: "same-origin",
+                cache: "no-store"
+            });
+            let data;
+            try {
+                data = await response.json();
+            } catch {
+                throw new Error("Invalid server response. Check process_staff.php.");
+            }
+            if (!response.ok || !data.success) {
+                if (response.status === 403) {
+                    throw new Error(data.message || "Admin access denied. Log in using your Elder account.");
+                }
+                throw new Error(data.message || "The request failed.");
+            }
+            return data;
+        }
+        function showNotice(message, type) {
+            clearTimeout(noticeTimer);
+            notice.textContent = message;
+            notice.className = "notice " + type;
+            noticeTimer = setTimeout(function() {
+                notice.textContent = "";
+                notice.className = "notice";
+            }, 4000);
+        }
+        function createStaffCard(staff) {
+            const id = Number(staff.id);
+            const username = String(staff.username ?? "Unknown user");
+            const fullName = [staff.fname, staff.lname].filter(Boolean).join(" ");
+            const blocked = Number(staff.is_blocked) === 1;
+            const card = document.createElement("article");
+            card.className = "member-card" + (blocked ? " blocked-card" : "");
+            const avatar = document.createElement("div");
+            avatar.className = "member-avatar";
+            avatar.textContent = username.charAt(0).toUpperCase();
+            const info = document.createElement("div");
+            info.className = "member-info";
+            const name = document.createElement("h3");
+            name.textContent = fullName ? fullName + " (" + username + ")" : username;
+            const status = document.createElement("p");
+            status.className = "member-status " + (blocked ? "blocked" : "active");
+            status.textContent = blocked ? "Account Blocked" : "Account Active";
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "member-action " + (blocked ? "unblock" : "block");
+            button.textContent = blocked ? "Unblock" : "Block";
+            button.disabled = !Number.isSafeInteger(id) || id <= 0;
+            button.addEventListener("click", function() {
+                changeStaffStatus(id, username, blocked, button);
+            });
+            info.append(name, status, button);
+            card.append(avatar, info);
+            return card;
+        }
+        async function loadStaff(showLoading = false) {
+            if (isLoading) return;
+            isLoading = true;
+            if (showLoading) {
+                const loading = document.createElement("div");
+                loading.className = "members-message";
+                loading.textContent = "Loading staff accounts...";
+                staffList.replaceChildren(loading);
+            }
+            try {
+                const data = await apiRequest({ method: "GET" });
+                if (!Array.isArray(data.staff)) {
+                    throw new Error("The server returned an invalid staff list.");
+                }
+                const fragment = document.createDocumentFragment();
+                data.staff.forEach(function(staff) {
+                    fragment.appendChild(createStaffCard(staff));
+                });
+                if (data.staff.length === 0) {
+                    const empty = document.createElement("div");
+                    empty.className = "members-message";
+                    empty.textContent = "No staff accounts found.";
+                    fragment.appendChild(empty);
+                }
+                staffList.replaceChildren(fragment);
+            } catch (error) {
+                const message = document.createElement("div");
+                message.className = "members-message error";
+                message.textContent = error.message;
+                staffList.replaceChildren(message);
+            } finally {
+                isLoading = false;
+            }
+        }
+        async function changeStaffStatus(id, username, blocked, button) {
+            const action = blocked ? "unblock_staff" : "block_staff";
+            const question = blocked
+                ? "Are you sure you want to unblock staff account " + username + "?"
+                : "Are you sure you want to block staff account " + username + "?";
+            if (!confirm(question)) return;
+            const oldText = button.textContent;
+            button.disabled = true;
+            button.textContent = blocked ? "Unblocking..." : "Blocking...";
+            const form = new FormData();
+            form.append("action", action);
+            form.append("id", String(id));
+            try {
+                const data = await apiRequest({ method: "POST", body: form });
+                showNotice(data.message, "success");
+                await loadStaff(true);
+            } catch (error) {
+                showNotice(error.message, "error");
+                button.disabled = false;
+                button.textContent = oldText;
+            }
+        }
+        staffForm.addEventListener("submit", async function(event) {
+            event.preventDefault();
+            formNotice.textContent = "";
+            addButton.disabled = true;
+            addButton.textContent = "Adding...";
+            try {
+                const form = new FormData(staffForm);
+                form.append("action", "add_staff");
+                const data = await apiRequest({ method: "POST", body: form });
+                staffForm.reset();
+                formNotice.textContent = data.message;
+                formNotice.style.color = "green";
+                await loadStaff(true);
+            } catch (error) {
+                formNotice.textContent = error.message;
+                formNotice.style.color = "red";
+            } finally {
+                addButton.disabled = false;
+                addButton.textContent = "Add Staff";
+            }
+        });
+        loadStaff(true);
+        refreshTimer = setInterval(function() {
+            loadStaff(false);
+        }, 5000);
+        window.addEventListener("beforeunload", function() {
+            clearInterval(refreshTimer);
+            clearTimeout(noticeTimer);
+        });
+    </script>
+</body>
+</html>

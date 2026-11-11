@@ -1,0 +1,238 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Westeria Login</title>
+    <meta name="description" content="Login to Westeria">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <section class="form">
+        <div class="form-container">
+
+            <div class="welcome">
+                <h1>Welcome Back!</h1>
+            </div>
+
+            <form
+                class="login-form"
+                id="loginForm"
+                action="process_login.php"
+                method="POST"
+            >
+
+                <div class="logo">
+                    <img
+                        src="Westeria Logo with Fierce Wolf Emblem.png"
+                        alt="Westeria Logo"
+                    >
+                </div>
+
+                <label for="username">Username:</label>
+
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="username"
+                    autocomplete="username"
+                    required
+                >
+
+                <label for="password">Password:</label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="password"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <div class="captcha-container">
+
+                    <label for="captcha_answer">
+                        Security Verification:
+                    </label>
+
+                    <div
+                        class="captcha-question"
+                        id="captchaQuestion"
+                    >
+                        Loading question...
+                    </div>
+
+                    <input
+                        type="number"
+                        id="captcha_answer"
+                        name="captcha_answer"
+                        placeholder="Enter your answer"
+                        required
+                    >
+
+                    <input
+                        type="hidden"
+                        id="captcha_token"
+                        name="captcha_token"
+                    >
+
+                    <button
+                        type="button"
+                        class="captcha-refresh"
+                        id="refreshCaptcha"
+                    >
+                        ↻ Refresh Question
+                    </button>
+
+                </div>
+
+                <div class="button-container">
+                    <button type="submit" id="loginButton">
+                        Login
+                    </button>
+                </div>
+
+                <div class="create-account">
+                    <button
+                        type="button"
+                        onclick="window.location.href='form.html'"
+                    >
+                        Create Account
+                    </button>
+                </div>
+
+                <p
+                    id="captchaMessage"
+                    role="alert"
+                    aria-live="polite"
+                ></p>
+
+            </form>
+        </div>
+    </section>
+
+    <script>
+    const loginForm = document.getElementById("loginForm");
+    const loginButton = document.getElementById("loginButton");
+    const captchaMessage = document.getElementById("captchaMessage");
+
+    const captchaQuestion = document.getElementById("captchaQuestion");
+    const captchaAnswer = document.getElementById("captcha_answer");
+    const captchaToken = document.getElementById("captcha_token");
+
+    let captchaSubmitting = false;
+
+    async function generateCaptcha() {
+
+        captchaQuestion.textContent = "Loading question...";
+        captchaAnswer.value = "";
+        captchaToken.value = "";
+
+        try {
+
+            const response = await fetch(
+                "process_login.php?captcha=generate",
+                {
+                    method: "GET",
+                    credentials: "same-origin",
+                    cache: "no-store"
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok || !data.success) {
+                throw new Error("CAPTCHA generation failed.");
+            }
+
+            captchaQuestion.textContent = data.question;
+            captchaToken.value = data.token;
+
+            captchaMessage.textContent = "";
+
+        } catch (error) {
+
+            captchaQuestion.textContent = "Unable to load question.";
+            captchaMessage.textContent =
+                "Please refresh the page and try again.";
+
+        }
+    }
+
+    document.getElementById("refreshCaptcha").addEventListener(
+        "click",
+        generateCaptcha
+    );
+
+    loginForm.addEventListener("submit", function(event) {
+
+        if (!loginForm.reportValidity()) {
+            event.preventDefault();
+            return;
+        }
+
+        if (
+            captchaToken.value === "" ||
+            captchaAnswer.value === ""
+        ) {
+
+            event.preventDefault();
+
+            captchaMessage.textContent =
+                "Please complete the security verification.";
+
+            return;
+        }
+
+        if (captchaSubmitting) {
+            event.preventDefault();
+            return;
+        }
+
+        captchaSubmitting = true;
+
+        loginButton.disabled = true;
+        loginButton.textContent = "Logging in...";
+
+        captchaMessage.textContent = "Verifying your login...";
+
+    });
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("error") === "blocked") {
+
+        alert("Your account has been blocked.");
+
+    } else if (params.get("error") === "captcha") {
+
+        alert("CAPTCHA verification failed. Please try again.");
+
+    } else if (params.get("error") === "invalid") {
+
+        alert("Invalid username or password.");
+
+    }
+
+    if (params.has("error")) {
+
+        window.history.replaceState(
+            {},
+            document.title,
+            window.location.pathname
+        );
+
+    }
+
+    generateCaptcha();
+
+    </script>
+
+</body>
+</html>

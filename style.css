@@ -1,0 +1,167 @@
+:root{
+    --primary: #fff;
+    --second: #E3F2FD;
+    --third: #90CAF9;
+    --fourth: #2196F3;
+    --fifth: #0D47A1;
+    --sixth: #029009;
+
+}
+*{
+    margin: 0;
+    padding: 0;
+}
+body{
+    font-family: 'Poppins', sans-serif;
+    background:linear-gradient(135deg,#90CAF9,#2196F3,#0D47A1);
+    min-height:100vh;
+}
+.form{
+    width: 400px;
+    margin: 50px auto;
+    background-color: var(--second);
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    float: center;
+}
+.form-container{
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.login-form{
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+.login-form input{
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.button-container button{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: var(--fourth);
+    color: var(--primary);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.create-account button{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: var(--sixth);
+    color: var(--primary);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    float: right;
+    margin-top: -50px;
+}
+
+.welcome{
+    text-align: center;
+    margin-bottom: 20px;
+    
+}
+.logo{
+    display: block;
+    margin: 0 auto 20px;
+    width: 100px;
+    height: 100px;
+}
+.logo img{
+    display: flex;
+    justify-content: center;
+    width: 200px;
+    height:200px;
+    justify-content: center;
+    margin-left: -60px;
+    margin-top: -50px;
+}
+
+@media (min-width: 600px) and (max-width: 1024px) {
+    .form {
+        margin-top: 20px;
+     margin-left: 160px;
+  font-size: 28px; 
+  padding: 0px 10px;
+    }
+
+}
+
+@media (max-width: 599px) {
+    .form {
+        margin-left: 140px;
+        padding: 0 15px;
+        font-size: 24px;
+    }
+}
+
+
+/* =================================
+   ADDITION CAPTCHA DESIGN
+================================= */
+
+.captcha-container {
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.captcha-container label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+.captcha-question {
+    width: 100%;
+    box-sizing: border-box;
+    background: #f1f5f9;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 12px;
+    text-align: center;
+    font-size: 25px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: #1e293b;
+}
+
+.captcha-container input[type="number"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 15px;
+}
+
+.captcha-refresh {
+    display: block;
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    color: #2563eb;
+    cursor: pointer;
+}
+
+.captcha-refresh:hover {
+    text-decoration: underline;
+}
+
+#captchaMessage {
+    text-align: center;
+    font-size: 13px;
+    margin-top: 10px;
+}
